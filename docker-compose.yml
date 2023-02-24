@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15.2
+    container_name: pg-playground-db
+    command: postgres -c config_file=/etc/postgresql.conf
+    environment:
+      POSTGRES_DB: pg-playground
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./postgresql.conf:/etc/postgresql.conf
+      - ./initdb:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d pg-playground"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 4G
+    networks:
+      - pg-playground
+
+  pgadmin:
+    container_name: pg-playground-admin
+    image: dpage/pgadmin4:6.20
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "root@mail.com"
+      PGADMIN_DEFAULT_PASSWORD: "root"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - admin-data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      - pg-playground
+volumes:
+  db-data:
+  admin-data:
+networks:
+  pg-playground:
